@@ -37,7 +37,7 @@ Use `- item` format. Bullets add +87% overhead vs bare words, but numbered lists
 Don't abbreviate technical terms — `function`, `parameter`, `context`, `authentication` are already single tokens. Abbreviating them saves nothing and hurts readability.
 
 ### 9. Remove explanations the model already knows
-Don't explain well-known technologies (PostgreSQL, TypeScript, REST APIs, etc.). Only explain what's unique to this project. Models treat common domain knowledge as redundant — it compresses naturally.
+Don't explain well-known technologies (PostgreSQL, TypeScript, REST APIs, etc.). Only explain what's unique to this project. Models treat common domain knowledge as redundant — it compresses naturally. **Caveat**: If the compressed document will be used across different model families, keep domain facts explicit — different models have different training data, so what one model "knows" another may not.
 
 ### 10. Preserve novel/unique content at full detail
 Custom conventions, project-specific patterns, unique architecture decisions, and non-obvious constraints must be kept with enough detail for unambiguous interpretation. These can't be reconstructed from the model's training data.
@@ -51,14 +51,24 @@ Custom conventions, project-specific patterns, unique architecture decisions, an
 - Don't use numbered lists when bullets suffice (+140% vs +87% overhead)
 - Don't use JSON wrapping for simple content (+93% overhead)
 
+## Large Document Strategy (1000+ tokens)
+
+For documents over ~1000 tokens, apply a top-down pass before word-level compression:
+
+1. **Triage sections by information density**: Sections containing novel/project-specific content get full compression treatment. Sections restating well-known domain concepts can be reduced to a one-line reference or dropped.
+2. **Preserve structural skeleton**: Keep headings and section boundaries — they cost few tokens but aid navigation. Flatten nested structure where possible (3 levels → 2).
+3. **Compress proportionally**: Larger documents typically contain more redundancy. A 1K-token doc may compress to 50%; a 10K-token doc may reach 30-40% of original.
+4. **Use cross-references instead of repetition**: If the same concept appears in multiple sections, state it once and reference it elsewhere (`(see above)` or `(→ §Config)`).
+
 ## Process
 
 1. Read the input document completely
-2. Identify content types: behavioral rules, factual reference, procedural steps, project metadata
-3. For each section, apply the compression rules above
-4. Preserve the document's logical structure (sections, groupings) but compress the format
-5. After compression, count tokens using the Anthropic API if available, or estimate
-6. Report: original token count, compressed token count, savings percentage
+2. For large documents (1000+ tokens), apply the Large Document Strategy first
+3. Identify content types: behavioral rules, factual reference, procedural steps, project metadata
+4. For each section, apply the compression rules above
+5. Preserve the document's logical structure (sections, groupings) but compress the format
+6. After compression, count tokens using the Anthropic API if available, or estimate
+7. Report: original token count, compressed token count, savings percentage
 
 ## Output format
 
